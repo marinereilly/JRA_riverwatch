@@ -31,7 +31,6 @@ a
 ##### Qa ######
 bad_temp<-df %>% 
   filter(air_temperature_p_707>=50) 
-<<<<<<< HEAD
 
 good_temp_df<-df %>% 
   mutate(temp_units=
@@ -47,19 +46,4 @@ a<-good_temp_df %>%
 a
 
 ##Im trying to see if I am connected to git
-bad_temp
-=======
 
-good_temp_df<-df %>% 
-  mutate(temp_units=
-           case_when(
-             air_temperature_p_707>=50  ~(air_temperature_p_707-32)*5/9,
-             air_temperature_p_707<50   ~air_temperature_p_707
-           ))
-a<-good_temp_df %>% 
-  ggplot()+
-  geom_point(aes(x=collection_date, 
-                 y=temp_units, color=station_id))+
-  theme_classic()
-a
->>>>>>> 7b795728116f518910af2f721e19386eaae7bef0
