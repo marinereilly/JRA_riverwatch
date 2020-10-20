@@ -104,6 +104,57 @@ ggsave('figures/cond_box.jpg')
 # What are the units for conductivity? 
 #What is the max conductivity that makes sense? Is it possible to convert the entries that are clearly false?
 # Also why does removing the outlier remove several thousand entries?? 
+summary(df)
+#bacteria graphs
+df%>%
+  ggplot(aes(e_coli_concentration_p_711)) +
+  geom_histogram(binwidth = .2) +
+  ylim(0,200) + 
+  xlim(0,200)
+df %>%
+  ggplot(aes(e_coli_concentration_p_711)) +
+  geom_histogram(binwidth = .2) +
+  ylim(0,200) + 
+  xlim(0,200)
+
+count(filter(df, e_coli_concentration_p_711 == 100))
+count(filter(df, e_coli_count_p_712 == 100))
+df %>%
+  ggplot(aes(y = x=collection_date, colour = station_id)) +
+  geom_point()
+
+#TRY THIS?
+df2<-df1 %>%
+  mutate(e_coli_count = 
+           case_when(
+             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712 * 33.33,
+             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_count_p_712
+           ))
+
+             
+df2<-df1 %>%
+  mutate(e_coli_count = 
+           case_when(
+             e_coli_concentration_p_711 %in% c(33,33.3,34,67,100,134,167) ~ e_coli_count_p_712 * 33.33,
+             !e_coli_concentration_p_711 %in% c(33,34,67,100,134,167) ~ e_coli_count_p_712
+           ))
+df2<- df2 %>%
+  mutate(e_coli_concentration = e_coli_count/3)
+df2%>%
+  ggplot(aes(e_coli_count)) +
+  geom_histogram(binwidth = .2) +
+  ylim(0,200) + 
+  xlim(0,200)
+df2 %>%
+  ggplot(aes(e_coli_concentration)) +
+  geom_histogram(binwidth = .2) +
+  ylim(0,200) + 
+  xlim(0,200)
+# This concentration might be slightly erroneous but 
+# we will just use the ecoli count
+
+summary(df2$e_coli_count)
+
 
 #### Date Time! ########
 df1 <- good_temp
@@ -193,9 +244,9 @@ yearly_wat_temp %>%
   facet_wrap(~`station_id`)
 ggsave('figures/yearly_air_temp.jpg')
 
-#####Making Hypothermia limit graphs #######
-
 #######Summary Tables ########
+
+#####Making Hypothermia limit graphs #######
 
 ####### Making Bacteria safety graphs#######
 
