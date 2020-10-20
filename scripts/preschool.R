@@ -51,7 +51,15 @@ watt<-filter(good_temp, station_id %in% c('A01', 'A02', 'A03', 'A08','C01', 'DC0
                                    'J29', 'J30', 'J35', 'J40', 'M05', 'P05', 'R10', 'R20',
                                    'R23'))
 
-
+#### Date Time! ########
+df1 <- good_temp
+df1$collection_date <- ymd_hms(df1$collection_date)
+df1$month <- month(df1$collection_date)
+df1$year <- year(df1$collection_date)
+df1$year <- as.factor(df1$year)
+df1$month <- as.factor(df1$month)
+summary(df1$wattemp_units)
+summary(df1)
 
 ######### Box Plots ###########
 theme_set(theme_classic() +
@@ -111,19 +119,19 @@ df%>%
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200)
+ggsave('figures/OG_ecoli_count_hist.jpg')
 df %>%
-  ggplot(aes(e_coli_concentration_p_711)) +
+  ggplot(aes(e_coli_count_p_712)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200)
+ggsave('figures/OG_ecoli_concent_hist.jpg')
 
 count(filter(df, e_coli_concentration_p_711 == 100))
 count(filter(df, e_coli_count_p_712 == 100))
-df %>%
-  ggplot(aes(y = x=collection_date, colour = station_id)) +
-  geom_point()
 
-#TRY THIS?
+
+#Cleaning E Coli Counts/Concentrations!
 df2<-df1 %>%
   mutate(e_coli_count = 
            case_when(
@@ -131,40 +139,40 @@ df2<-df1 %>%
              e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_count_p_712
            ))
 
-             
-df2<-df1 %>%
-  mutate(e_coli_count = 
-           case_when(
-             e_coli_concentration_p_711 %in% c(33,33.3,34,67,100,134,167) ~ e_coli_count_p_712 * 33.33,
-             !e_coli_concentration_p_711 %in% c(33,34,67,100,134,167) ~ e_coli_count_p_712
-           ))
+
 df2<- df2 %>%
-  mutate(e_coli_concentration = e_coli_count/3)
+  mutate(e_coli_concentration = 
+           case_when(
+             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712/3,
+             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_concentration_p_711
+           ))
+
+
+count(filter(df2, e_coli_concentration == 100))
+count(filter(df2, e_coli_count == 100))
+
 df2%>%
   ggplot(aes(e_coli_count)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200)
+ggsave('figures/good_ecoli_count_hist.jpg')
 df2 %>%
   ggplot(aes(e_coli_concentration)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200)
+ggsave('figures/OG_ecoli_concent_hist.jpg')
 # This concentration might be slightly erroneous but 
 # we will just use the ecoli count
 
-summary(df2$e_coli_count)
+summary(df2$e_coli_concentration)
+
+df2 %>%
+  ggplot(aes(y = e_coli_count  x=collection_date, colour = station_id)) +
+  geom_point()
 
 
-#### Date Time! ########
-df1 <- good_temp
-df1$collection_date <- ymd_hms(df1$collection_date)
-df1$month <- month(df1$collection_date)
-df1$year <- year(df1$collection_date)
-df1$year <- as.factor(df1$year)
-df1$month <- as.factor(df1$month)
-summary(df1$wattemp_units)
-summary(df1)
 #####Monthly #########
 #summarise water temp by month
 monthly_wat_temp <- df1 %>%
