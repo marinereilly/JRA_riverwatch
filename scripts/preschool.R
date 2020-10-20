@@ -65,7 +65,7 @@ summary(df1)
 theme_set(theme_classic() +
             theme(axis.text.x = element_text(size = 8, angle = 90, 
                                             hjust = 1, vjust = 1),
-                  axis.text.y = )
+                  plot.title = element_text(hjust = .5) )
           )
 
 # Air Temp per Site
@@ -113,18 +113,21 @@ ggsave('figures/cond_box.jpg')
 #What is the max conductivity that makes sense? Is it possible to convert the entries that are clearly false?
 # Also why does removing the outlier remove several thousand entries?? 
 summary(df)
-#bacteria graphs
+
+######bacteria########
 df%>%
   ggplot(aes(e_coli_concentration_p_711)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
-  xlim(0,200)
+  xlim(0,200) +
+  labs(x = 'E. coli Concentration', title = 'Original Data')
 ggsave('figures/OG_ecoli_count_hist.jpg')
 df %>%
   ggplot(aes(e_coli_count_p_712)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
-  xlim(0,200)
+  xlim(0,200) +
+  labs(x = 'E. coli Count', title = 'Original Data')
 ggsave('figures/OG_ecoli_concent_hist.jpg')
 
 count(filter(df, e_coli_concentration_p_711 == 100))
@@ -168,9 +171,49 @@ ggsave('figures/OG_ecoli_concent_hist.jpg')
 
 summary(df2$e_coli_concentration)
 
+#Create Pass/Fail for E.Coli
+df2 <-df2 %>%
+  mutate(ecoli_grade = case_when(e_coli_count >= 235 ~ 'F',
+                                 e_coli_count< 235 ~ 'P'))
+#Figure out Enterococcus
+summary(df2$enterococcus_bacteria_concentration_p_1690)
+df2%>%
+  ggplot(aes(enterococcus_bacteria_concentration_p_1690)) +
+  geom_histogram(binwidth = .2) +
+  ylim(0,200) + 
+  xlim(0,200)
+
+#Something seems wrong here?? Is there really this little data? 
+
+#Create Pass/Fail for E. Enterococcus
+df2 <- df2 %>%
+  mutate(enterococcus_grade=
+           case_when(enterococcus_bacteria_concentration_p_1690 >= 104 ~ 'F',
+                     enterococcus_bacteria_concentration_p_1690 < 104 ~ 'P'))
+
+#make pass/fail graphs per site
+#need to make these graphs more aesthetic
 df2 %>%
-  ggplot(aes(y = e_coli_count  x=collection_date, colour = station_id)) +
-  geom_point()
+  filter(!is.na(ecoli_grade)) %>%
+  ggplot(aes( x =station_id, fill = ecoli_grade)) +
+  geom_bar(stat='count')
+ggsave('figures/ecoli_grade_count.jpg')
+df2 %>%
+  filter(!is.na(ecoli_grade)) %>%
+  ggplot(aes( x =station_id, fill = ecoli_grade, )) +
+  geom_bar(stat='count',position = 'fill')
+ggsave('figures/ecoli_grade_prop.jpg')
+df2 %>%
+  filter(!is.na(enterococcus_grade)) %>%
+  ggplot(aes( x =station_id, fill = enterococcus_grade)) +
+  geom_bar(stat='count')
+ggsave('figures/entero_grade_count.jpg')
+
+df2 %>%
+  filter(!is.na(enterococcus_grade)) %>%
+  ggplot(aes( x =station_id, fill = enterococcus_grade)) +
+  geom_bar(stat='count', position = 'fill')
+ggsave('figures/entero_grade_prop.jpg')
 
 
 #####Monthly #########
