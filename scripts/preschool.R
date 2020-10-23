@@ -194,7 +194,6 @@ df2 <- df2 %>%
                      enterococcus_bacteria_concentration_p_1690 < 104 ~ 'P'))
 
 #make pass/fail graphs per site
-#need to make these graphs more aesthetic
 df2 %>%
   filter(!is.na(ecoli_grade)) %>%
   ggplot(aes( x =station_id, fill = ecoli_grade)) +
@@ -316,8 +315,145 @@ yearly_wat_temp %>%
   facet_wrap(~`station_id`)
 ggsave('figures/yearly_air_temp.jpg')
 
-#######Summary Tables ########
+#### Make data ready for multiplots
+df_long<-df2 %>% 
+  select(collection_date,
+         station_id,
+         air_temp=airtemp_units,
+         conductivity=conductivity_p_709,
+         e_coli=e_coli_count,
+         entero=enterococcus_bacteria_concentration_p_1690,
+         salinity=salinity_p_1715,
+         turbidity=turbidity_p_710,
+         water_temp=wattemp_units) %>% 
+  pivot_longer(cols=c("air_temp","conductivity","e_coli","entero","salinity",
+                      "turbidity","water_temp"),
+               values_to= "value",
+               names_to= "parameter") %>% 
+  drop_na(value)
 
+df_long<-df_long %>% 
+  mutate(plot_id=paste0(station_id,"_",parameter))
+
+df_nest<-df_long %>% 
+  group_by(plot_id) %>% 
+  nest()
+
+df_plots<-df_nest %>% 
+  mutate(plots=map2(data,plot_id, ~ggplot(.x)+
+                      ggtitle(.y)+
+                      geom_point(aes(x=collection_date,y=value))+
+                      labs(x = "Collection Date") +
+                      theme_classic()))
+
+df_plots$plots[[1]]
+##I don't know how to make these more aesthetic, I think 
+# this gets the point across but let me know if you want
+#the graphs to be prettier
+
+
+
+#use the map function with ggsave to save named figures. 
+dir.create("./figures/station_plots")
+map2(paste0("./figures/station_plots/", df_plots$plot_id, ".jpg"), 
+       df_plots$plots, ggsave)
+
+#Same thing but for pass/fail
+df_long1<-df2 %>% 
+  select(collection_date,
+         station_id,
+         air_temp=airtemp_units,
+         conductivity=conductivity_p_709,
+         e_coli=e_coli_count,
+         entero=enterococcus_bacteria_concentration_p_1690,
+         salinity=salinity_p_1715,
+         turbidity=turbidity_p_710,
+         water_temp=wattemp_units,
+         ecoli_grade = ecoli_grade,
+         entero_grade = enterococcus_grade) %>% 
+  pivot_longer(cols=c("air_temp","conductivity","e_coli","entero","salinity",
+                      "turbidity","water_temp"),
+               values_to= "value",
+               names_to= "parameter") %>% 
+  drop_na(value)
+
+#######Summary Tables ########
+df2$ecoli_grade <- as.factor(df2$ecoli_grade)
+df2$station_id <- as.factor(df2$station_id)
+
+#substitute pass/fails for 1 and 0
+df3 <- df2 %>%
+  mutate(ecoli_grade1 = 
+    case_when(ecoli_grade %in% c('P') ~ (1),
+              ecoli_grade %in% c('F') ~ (0))) %>%
+  mutate(entero_grade1 = 
+           case_when(enterococcus_grade%in% c('P') ~ (1),
+                     enterococcus_grade %in% c('F') ~ (0)))
+
+#make summary tables
+tab_entero <- df3[!is.na(df3$entero_grade1), ] %>%
+  group_by(station_id) %>%
+  summarise(ent_avg = mean(entero_grade1),
+            n = length(station_id),
+            sd = sd(entero_grade1),
+            se = sd/sqrt(n))
+
+tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
+  group_by(station_id) %>%
+  summarise(eco_avg = mean(ecoli_grade1),
+            n = length(ecoli_grade1),
+            sd = sd(ecoli_grade1),
+            se = sd/sqrt(n))
+
+#####Overall E. Coli Safety Graph
+tab_ecoli %>%
+  ggplot(aes(x = station_id, y = eco_avg)) +
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = eco_avg - se, ymax = eco_avg + se),
+                width = .2,
+                position=position_dodge(.9)) +
+  labs(x = 'Station ID', y = 'E Coli Passing Rate',
+       title = 'Overall E. Coli Safety')
+ggsave('figures/overall_ecoli_safety.jpg')
+# The overall passing rates of each site for E. Coli
+# Closer to 1 is healthier! 
+
+#### Yearly E. Coli Safety Table & Graph
+tab_ecoli_yearly <- df3 [!is.na(df3$ecoli_grade1), ] %>%
+  group_by(station_id, year) %>%
+  summarise(eco_avg = mean(ecoli_grade1),
+            n = length(ecoli_grade1),
+            sd = sd(ecoli_grade1),
+            se = sd/sqrt(n))
+df_nest<-tab_ecoli_yearly %>% 
+  group_by(station_id) %>% 
+  nest()
+
+### AAA STRUGGLING HERE!  Need to make 
+# a separate graph for each station showing the
+# average passing rate for e coli per year
+df_eco_plots<-df_nest %>% 
+  mutate(plots=map2(data,station_id, ~ggplot(aes(x = year, y = eco_avg))+
+                      ggtitle(.y)+
+                      geom_bar(stat = 'identity')+
+                      geom_errorbar(aes(ymin= eco_avg - se,
+                                        ymax = eco_avg + se))+
+                      labs(x = "Collection Date") 
+                           ))
+
+df_eco_plots$plots[[1]]
+
+######### Overall Enterococcus Safety Graph
+tab_entero %>% 
+  ggplot(aes(x = station_id, y = ent_avg)) +
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = ent_avg - se, ymax = ent_avg + se),
+                width = .2,
+                position=position_dodge(.9)) +
+  labs(x = 'Station ID', y = 'Enterococcus Passing Rate',
+       title = 'Overall Enterococcus Safety')
+ggsave('figures/overall_entero_safety.jpg')
+  
 #####Making Hypothermia limit graphs #######
 
 ####### Making Bacteria safety graphs#######
