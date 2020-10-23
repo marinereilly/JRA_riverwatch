@@ -98,7 +98,7 @@ good_temp %>%
   labs(x = 'Station ID', y = 'Turbidity (Units)')
 
 ggsave('figures/turb_box.jpg') 
-# Can we recalculate these incorrect turbidity measurements?
+
 
 
 # Conductivity per Site
@@ -110,8 +110,8 @@ good_temp %>%
   scale_y_continuous(breaks = seq(0,1500,100))
 ggsave('figures/cond_box.jpg') 
 # What are the units for conductivity? 
-#What is the max conductivity that makes sense? Is it possible to convert the entries that are clearly false?
-# Also why does removing the outlier remove several thousand entries?? 
+#Is it possible to convert the entries in incorrect units?
+
 summary(df)
 
 ######bacteria########
@@ -129,9 +129,11 @@ df %>%
   xlim(0,200) +
   labs(x = 'E. coli Count', title = 'Original Data')
 ggsave('figures/OG_ecoli_concent_hist.jpg')
+#What a mess! E.coli count is the higher value
 
 count(filter(df, e_coli_concentration_p_711 == 100))
 count(filter(df, e_coli_count_p_712 == 100))
+
 
 
 #Cleaning E Coli Counts/Concentrations!
@@ -151,8 +153,8 @@ df2<- df2 %>%
            ))
 
 
-count(filter(df2, e_coli_concentration == 100))
-count(filter(df2, e_coli_count == 100))
+count(filter(df2, e_coli_concentration == 34))
+count(filter(df2, e_coli_count == 34))
 
 df2%>%
   ggplot(aes(e_coli_count)) +
@@ -196,23 +198,44 @@ df2 <- df2 %>%
 df2 %>%
   filter(!is.na(ecoli_grade)) %>%
   ggplot(aes( x =station_id, fill = ecoli_grade)) +
-  geom_bar(stat='count')
+  geom_bar(stat='count') +
+  labs(x = "Station ID", y = 'Count', 
+       fill = "Water Quality Grade",
+       title = 'E. Coli Safety All Years') + 
+  scale_fill_discrete(name = "Water Quality Grade",
+                      labels = c('Fail', 'Pass')) +
+  
 ggsave('figures/ecoli_grade_count.jpg')
 df2 %>%
   filter(!is.na(ecoli_grade)) %>%
   ggplot(aes( x =station_id, fill = ecoli_grade, )) +
-  geom_bar(stat='count',position = 'fill')
+  geom_bar(stat='count',position = 'fill') +
+  labs(x = "Station ID", y = 'Proportion', 
+       fill = "Water Quality Grade",
+       title = 'E. Coli Safety All Years') + 
+  scale_fill_discrete(name = "Water Quality Grade",
+                      labels = c('Fail', 'Pass'))
 ggsave('figures/ecoli_grade_prop.jpg')
 df2 %>%
   filter(!is.na(enterococcus_grade)) %>%
   ggplot(aes( x =station_id, fill = enterococcus_grade)) +
-  geom_bar(stat='count')
+  geom_bar(stat='count') +
+  labs(x = "Station ID", y = 'Count', 
+       fill = "Water Quality Grade",
+       title = 'Enterococcus Safety All Years') + 
+  scale_fill_discrete(name = "Water Quality Grade",
+                      labels = c('Fail', 'Pass'))
 ggsave('figures/entero_grade_count.jpg')
 
 df2 %>%
   filter(!is.na(enterococcus_grade)) %>%
   ggplot(aes( x =station_id, fill = enterococcus_grade)) +
-  geom_bar(stat='count', position = 'fill')
+  geom_bar(stat='count', position = 'fill') +
+  labs(x = "Station ID", y = 'Proportion', 
+       fill = "Water Quality Grade",
+       title = 'Enterococcus Safety All Years') + 
+  scale_fill_discrete(name = "Water Quality Grade",
+                      labels = c('Fail', 'Pass'))
 ggsave('figures/entero_grade_prop.jpg')
 
 
@@ -267,8 +290,6 @@ monthly_turb %>%
   ggplot(aes(x = month, y = mean_turb)) + 
   geom_bar(stat = 'identity', fill = 'green4') + 
   geom_errorbar(aes(ymin = mean_turb - sd, ymax = mean_turb +sd)) +
-  theme_bw() +
-  theme(panel.grid = element_blank()) +
   ylim(0,200) +
   labs(x = 'Month', y = 'Turbidity') + 
   facet_wrap(~`station_id`)
