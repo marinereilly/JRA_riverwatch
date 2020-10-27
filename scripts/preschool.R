@@ -529,9 +529,11 @@ tab_hypo_yearly_sitely <- df2[!is.na(df2$hypo_safe1), ] %>%
 # graph for each site with yearly hypo safety?
 
 df2 %>%
-  ggplot(aes(x = collection_date, y = temp_tot, fill = station_id)) +
+  ggplot(aes(x = collection_date, y = temp_tot, color = station_id)) +
   geom_point(size = 2) + 
-  geom_hline(yintercept = 37.778, col= 'blue')
-  
+  geom_hline(yintercept = 37.778, col= 'red') +
+  labs( x= 'Date', y = "Total Temperature (C)", 
+        title = 'Hypothermia Safety')
+ggsave('figures/hypo_safety_point.jpg')  
 
 ##### Daily Turbidity & Bacteria Graphs #####
