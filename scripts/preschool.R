@@ -31,7 +31,7 @@ good_temp<-good_temp %>%
              water_temperature_p_708>=50  ~ ( water_temperature_p_708-32)*5/9,
              water_temperature_p_708<50   ~  water_temperature_p_708
            ))
-
+df1<- startsWith(good_temp, 'VDH')
 ######Check out data ########
 summary(good_temp)
 
