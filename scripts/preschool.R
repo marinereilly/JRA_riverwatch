@@ -36,21 +36,6 @@ good_temp<-good_temp %>%
 summary(good_temp)
 
 
-#Prep data for Air Temp Boxplot
-airt<-filter(good_temp, station_id %in% c('A01', 'A02', 'A03', 'A08','C01', 'DC01', 'H01', 'H02',
-                                  'J02', 'J03', 'J04', 'J05', 'J08', 'J09', 'J10', 'J15',
-                                  'J15', 'J20', 'J21', 'J22', 'J23', 'J24', 'J25', 'J26',
-                                  'J29', 'J30', 'J35', 'J40', 'M05', 'P05', 'R10', 'R20',
-                                  'R23'))
-
-summary(good_temp)
-# Prep data for Water Temp Boxplot
-watt<-filter(good_temp, station_id %in% c('A01', 'A02', 'A03', 'A08','C01', 'DC01', 'H01', 'H02',
-                                   'J02', 'J03', 'J04', 'J05', 'J08', 'J09', 'J10', 'J15',
-                                   'J15', 'J20', 'J21', 'J22', 'J23', 'J24', 'J25', 'J26',
-                                   'J29', 'J30', 'J35', 'J40', 'M05', 'P05', 'R10', 'R20',
-                                   'R23'))
-
 #### Date Time! ########
 df1 <- good_temp
 df1$collection_date <- ymd_hms(df1$collection_date)
@@ -69,7 +54,7 @@ theme_set(theme_classic() +
           )
 
 # Air Temp per Site
-airt %>%
+df1 %>%
   filter (!airtemp_units <= 0) %>%
   ggplot(aes(`station_id`, airtemp_units)) +
          geom_boxplot() + 
@@ -80,7 +65,7 @@ airt %>%
 ggsave('figures/air_temp_box.jpg')
         
 # Water Temp per site
-watt %>%
+df1 %>%
   filter(!wattemp_units <= 0) %>%
   ggplot(aes(`station_id`, wattemp_units)) +
   geom_boxplot()+ 
@@ -89,7 +74,7 @@ watt %>%
 ggsave('figures/wat_temp_box.jpg')
 
 # Turbidity per site
-good_temp %>%
+df1 %>%
   filter(!turbidity_p_710 == 1056) %>%
   filter(!turbidity_p_710 == -9) %>%
     ggplot(aes(`station_id`, turbidity_p_710)) + 
@@ -102,7 +87,7 @@ ggsave('figures/turb_box.jpg')
 
 
 # Conductivity per Site
-good_temp %>%
+df1 %>%
   filter(!conductivity_p_709==22027) %>%
   ggplot(aes(`station_id`, conductivity_p_709)) + 
   geom_boxplot() +
@@ -115,14 +100,14 @@ ggsave('figures/cond_box.jpg')
 summary(df)
 
 ######bacteria########
-df%>%
+df1%>%
   ggplot(aes(e_coli_concentration_p_711)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200) +
   labs(x = 'E. coli Concentration', title = 'Original Data')
 ggsave('figures/OG_ecoli_count_hist.jpg')
-df %>%
+df1 %>%
   ggplot(aes(e_coli_count_p_712)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
@@ -215,6 +200,7 @@ df2 %>%
   scale_fill_discrete(name = "Water Quality Grade",
                       labels = c('Fail', 'Pass'))
 ggsave('figures/ecoli_grade_prop.jpg')
+
 df2 %>%
   filter(!is.na(enterococcus_grade)) %>%
   ggplot(aes( x =station_id, fill = enterococcus_grade)) +
@@ -432,6 +418,7 @@ df_nest<-tab_ecoli_yearly %>%
 ### AAA STRUGGLING HERE!  Need to make 
 # a separate graph for each station showing the
 # average passing rate for e coli per year
+
 df_eco_plots<-df_nest %>% 
   mutate(plots=map2(data,station_id, ~ggplot(aes(x = year, y = eco_avg))+
                       ggtitle(.y)+
