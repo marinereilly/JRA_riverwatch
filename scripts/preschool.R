@@ -4,6 +4,8 @@ library(tidyr)
 library(ggplot2)
 library(lubridate)
 library(janitor)
+install.packages('colourpicker')
+library('colourpicker')
 
 #######Load Data ##########
 df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
@@ -31,7 +33,7 @@ good_temp<-good_temp %>%
              water_temperature_p_708>=50  ~ ( water_temperature_p_708-32)*5/9,
              water_temperature_p_708<50   ~  water_temperature_p_708
            ))
-df1<- startsWith(good_temp, 'VDH')
+
 ######Check out data ########
 summary(good_temp)
 
@@ -187,7 +189,7 @@ df2 %>%
        fill = "Water Quality Grade",
        title = 'E. Coli Safety All Years') + 
   scale_fill_discrete(name = "Water Quality Grade",
-                      labels = c('Fail', 'Pass')) +
+                      labels = c('Fail', 'Pass')) 
   
 ggsave('figures/ecoli_grade_count.jpg')
 df2 %>%
@@ -391,6 +393,8 @@ tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
             sd = sd(ecoli_grade1),
             se = sd/sqrt(n))
 
+###### More Bacteria Safety Graphs #########
+
 #####Overall E. Coli Safety Graph
 tab_ecoli %>%
   ggplot(aes(x = station_id, y = eco_avg)) +
@@ -411,6 +415,7 @@ tab_ecoli_yearly <- df3 [!is.na(df3$ecoli_grade1), ] %>%
             n = length(ecoli_grade1),
             sd = sd(ecoli_grade1),
             se = sd/sqrt(n))
+
 df_nest<-tab_ecoli_yearly %>% 
   group_by(station_id) %>% 
   nest()
@@ -443,6 +448,90 @@ ggsave('figures/overall_entero_safety.jpg')
   
 #####Making Hypothermia limit graphs #######
 
-####### Making Bacteria safety graphs#######
+df2$temp_tot = df2$wattemp_units + df2$airtemp_units
+
+df2 <- df2 %>%
+  mutate(hypo_safe = 
+           case_when(temp_tot <= 37.778 ~ 'F',
+                     temp_tot > 37.778 ~ 'P'))
+df2 %>%
+  filter(!is.na(hypo_safe)) %>%
+  ggplot(aes( x =station_id, fill = hypo_safe)) +
+  geom_bar(stat='count') +
+  labs(x = "Station ID", y = 'Count', 
+       fill = "Hypothermia Safety",
+       title = 'Hypothermia Safety All Years') + 
+  scale_fill_manual(values = c("#00EEEE", "darkorange"),
+                      name = "Hypothermia Safety",
+                      labels = c('Too Cold', 'Safe')
+                      )
+ggsave('figures/hypo_grade_all.jpg')
+
+
+
+df2 %>%
+  filter(!is.na(hypo_safe)) %>%
+  ggplot(aes( x =station_id, fill = hypo_safe)) +
+  geom_bar(stat='count') +
+  labs(x = "Station ID", y = 'Count', 
+       fill = "Hypothermia Safety",
+       title = 'Hypothermia Safety All Years') + 
+  scale_fill_discrete(name = "Hypothermia Safety",
+                      labels = c('Fail', 'Pass'))
+
+df2 <- df2 %>%
+  mutate(hypo_safe1 = 
+           case_when(hypo_safe %in% c('P') ~ (1),
+                     hypo_safe %in% c('F') ~ (0)))
+
+# Summarize passing percent by station
+tab_hypo <- df2[!is.na(df2$hypo_safe1), ] %>%
+  group_by(station_id) %>%
+  summarise(hypo_avg = mean(hypo_safe1),
+            n = length(station_id),
+            sd = sd(hypo_safe1),
+            se = sd/sqrt(n))
+
+tab_hypo %>%
+  ggplot(aes(x = station_id, y = hypo_avg)) +
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = hypo_avg - se, ymax = hypo_avg + se),
+                width = .2,
+                position=position_dodge(.9)) +
+  labs(x = 'Station ID', y = 'Hypothermia Risk Passing Rate',
+       title = 'Overall Hypothermia Safety')
+ggsave('figures/overall_hypo_safety.jpg')
+# closer to 1 is a passing rate, so more safe! 
+
+tab_hypo_yearly <- df2[!is.na(df2$hypo_safe1), ] %>%
+  group_by(year) %>%
+  summarise(hypo_avg = mean(hypo_safe1),
+            n = length(station_id),
+            sd = sd(hypo_safe1),
+            se = sd/sqrt(n))
+tab_hypo_yearly %>%
+  ggplot(aes(x = year, y = hypo_avg)) +
+  geom_bar(stat = 'identity') +
+  geom_errorbar(aes(ymin = hypo_avg - se, ymax = hypo_avg + se),
+                width = .2,
+                position=position_dodge(.9)) +
+  labs(x = 'Year', y = 'Hypothermia Risk Passing Rate',
+       title = 'Yearly Hypothermia Safety')
+ggsave('figures/overall_hypo_safety.jpg')
+
+tab_hypo_yearly_sitely <- df2[!is.na(df2$hypo_safe1), ] %>%
+  group_by(station_id, year) %>%
+  summarise(hypo_avg = mean(hypo_safe1),
+            n = length(station_id),
+            sd = sd(hypo_safe1),
+            se = sd/sqrt(n))
+ #can we nest this table by site and mapping/ create a 
+# graph for each site with yearly hypo safety?
+
+df2 %>%
+  ggplot(aes(x = collection_date, y = temp_tot, fill = station_id)) +
+  geom_point(size = 2) + 
+  geom_hline(yintercept = 37.778, col= 'blue')
+  
 
 ##### Daily Turbidity & Bacteria Graphs #####
