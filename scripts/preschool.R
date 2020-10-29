@@ -4,8 +4,8 @@ library(tidyr)
 library(ggplot2)
 library(lubridate)
 library(janitor)
-install.packages('colourpicker')
 library('colourpicker')
+library('purrr')
 
 #######Load Data ##########
 df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
@@ -306,7 +306,7 @@ ggsave('figures/yearly_air_temp.jpg')
 #### Make data ready for multiplots
 df_long<-df2 %>% 
   select(collection_date,
-         station_id,
+         station_name,
          air_temp=airtemp_units,
          conductivity=conductivity_p_709,
          e_coli=e_coli_count,
@@ -321,7 +321,7 @@ df_long<-df2 %>%
   drop_na(value)
 
 df_long<-df_long %>% 
-  mutate(plot_id=paste0(station_id,"_",parameter))
+  mutate(plot_id=paste0(station_name,"_",parameter))
 
 df_nest<-df_long %>% 
   group_by(plot_id) %>% 
@@ -334,7 +334,7 @@ df_plots<-df_nest %>%
                       labs(x = "Collection Date") +
                       theme_classic()))
 
-df_plots$plots[[1]]
+df_plots$plots[[10]]
 ##I don't know how to make these more aesthetic, I think 
 # this gets the point across but let me know if you want
 #the graphs to be prettier
@@ -420,9 +420,11 @@ df_nest<-tab_ecoli_yearly %>%
   group_by(station_id) %>% 
   nest()
 
+
 ### AAA STRUGGLING HERE!  Need to make 
 # a separate graph for each station showing the
 # average passing rate for e coli per year
+#just use faceting? 
 
 df_eco_plots<-df_nest %>% 
   mutate(plots=map2(data,station_id, ~ggplot(aes(x = year, y = eco_avg))+
@@ -484,6 +486,7 @@ df2 <- df2 %>%
            case_when(hypo_safe %in% c('P') ~ (1),
                      hypo_safe %in% c('F') ~ (0)))
 
+
 # Summarize passing percent by station
 tab_hypo <- df2[!is.na(df2$hypo_safe1), ] %>%
   group_by(station_id) %>%
@@ -525,6 +528,7 @@ tab_hypo_yearly_sitely <- df2[!is.na(df2$hypo_safe1), ] %>%
             n = length(station_id),
             sd = sd(hypo_safe1),
             se = sd/sqrt(n))
+
  #can we nest this table by site and mapping/ create a 
 # graph for each site with yearly hypo safety?
 
