@@ -228,7 +228,7 @@ ggsave('figures/entero_grade_prop.jpg')
 
 #####Monthly #########
 #summarise water temp by month
-monthly_wat_temp <- df1 %>%
+monthly_wat_temp <- df2 %>%
   filter(wattemp_units > 0) %>%
   group_by(month, station_id) %>%
   summarise(mean_wat = mean(wattemp_units, na.rm = TRUE),
@@ -246,7 +246,7 @@ monthly_wat_temp %>%
 ggsave('figures/monthly_wat_temp.jpg')
 
 #Summarize air temp by month
-monthly_air_temp <- df1 %>%
+monthly_air_temp <- df2 %>%
   group_by(month, station_id) %>%
   summarise(mean_air = mean(airtemp_units, na.rm = TRUE),
             sd = sd(airtemp_units, na.rm = TRUE))
@@ -267,7 +267,7 @@ monthly_air_temp %>%
 ggsave('figures/monthly_air_temp.jpg')
 
 #summarise turbidity by month
-monthly_turb <- df1 %>%
+monthly_turb <- df2 %>%
   filter(!turbidity_p_710 < 0) %>%
   group_by(month, station_id) %>%
   summarise(mean_turb = mean(turbidity_p_710, na.rm = TRUE),
@@ -283,7 +283,7 @@ monthly_turb %>%
 ggsave('figures/monthly_turb.jpg')
 
 ## summarise water temp by month
-yearly_wat_temp <- df1 %>%
+yearly_wat_temp <- df2 %>%
   filter(wattemp_units > 0) %>%
   group_by(year, station_id) %>%
   summarise(mean_wat = mean(wattemp_units, na.rm = TRUE),
@@ -392,7 +392,8 @@ tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
             n = length(ecoli_grade1),
             sd = sd(ecoli_grade1),
             se = sd/sqrt(n))
-
+write.csv(tab_ecoli, file = 'tables/ecoli_pass_rate_sitely.csv')
+setwd('C:\Desktop\JRA\JRA_riverwatch')
 ###### More Bacteria Safety Graphs #########
 
 #####Overall E. Coli Safety Graph
