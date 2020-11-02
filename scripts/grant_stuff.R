@@ -14,3 +14,5 @@ library('colourpicker')
 library('purrr')
 
 ######### Load Data #######
+df<-read.csv("data/tidied_df.csv")
+summary(df)
