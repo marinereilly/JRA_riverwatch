@@ -20,7 +20,6 @@ df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
   clean_names()
 
 #######Clean Data ##########
-#get rid of error values 
 
 
 #Fix temperatures
@@ -95,6 +94,7 @@ ggsave('figures/turb_box.jpg')
 # Conductivity per Site
 df1 %>%
   filter(!conductivity_p_709==22027) %>%
+  filter(!conductivity_p_709 == -9) %>%
   ggplot(aes(`station_id`, conductivity_p_709)) + 
   geom_boxplot() +
   labs(x = 'Station ID', y = 'Conductivity (Units)') + 
@@ -128,6 +128,7 @@ count(filter(df, e_coli_count_p_712 == 100))
 
 
 #Cleaning E Coli Counts/Concentrations!
+summary(df1$e_coli_concentration_p_711)
 df2<-df1 %>%
   mutate(e_coli_count = 
            case_when(
@@ -251,6 +252,7 @@ ggsave('figures/monthly_wat_temp.jpg')
 
 #Summarize air temp by month
 monthly_air_temp <- df2 %>%
+  filter(!airtemp_units == -9) %>%
   group_by(month, station_id) %>%
   summarise(mean_air = mean(airtemp_units, na.rm = TRUE),
             sd = sd(airtemp_units, na.rm = TRUE))
@@ -546,10 +548,9 @@ df3 %>%
 ggsave('figures/hypo_safety_point.jpg')  
 
 #Fix station names
-site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv")
-df4 <- merge(x = df3, y = site_names, 
-             by.x = `station_id`, by.y = `Station Number`,
-             all.x = TRUE)
 
-write.csv(df3, file = 'data/tidied_df.csv')
+site_names <- read.csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv")
+df4 <- merge(x=df3, y = site_names, by.x = 'station_id', by.y='Station.Number')
+
+write.csv(df4, file = 'data/tidied_df.csv')
 ##### Daily Turbidity & Bacteria Graphs #####

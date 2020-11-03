@@ -17,14 +17,13 @@ library(readr)
 ######### Load Data #######
 df<-read.csv("data/tidied_df.csv")
 summary(df)
-site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv")
 summary(site_names)
 
 #####Clean Data ###########
 # Correct Station Names
-df1 <- merge(x=df, y = site_names, by.x = 'station_id', by.y='Station Number')
-df1$`Station Description`<-as.factor(df1$`Station Description`)
-df1$station_name <- as.factor(df1$station_name)
+
+df$`Station.Description`<-as.factor(df$`Station.Description`)
+df$station_name <- as.factor(df$station_name)
 summary(df1 )
 
 
@@ -33,45 +32,26 @@ summary(df1 )
 
 ###### Summary Tables #########
 #Table by site of reasonable ranges 
-sum <-df1 %>%
-  group_by(station_id, month) %>%
-  summarise(wat_avg = mean(wattemp_units, na.rm = TRUE)
+reasonable_values <-df1 %>%
+  group_by(Station.Description) %>%
+  summarise(wat_low = quantile(wattemp_units, prob = 0.05, na.rm = TRUE),
+            wat_high = quantile(wattemp_units, prob = 0.95, na.rm = TRUE),
+            air_low = quantile(airtemp_units, prob = 0.05, na.rm = TRUE),
+            air_high = quantile(airtemp_units, prob = 0.95, na.rm = TRUE),
+            ecoli_count_low = quantile(e_coli_count, prob = 0.05, na.rm = TRUE),
+            ecoli_count_high = quantile(e_coli_count, prob = 0.95, na.rm = TRUE),
+            entero_low = quantile(enterococcus_bacteria_concentration_p_1690, prob = 0.05, na.rm = TRUE),
+            entero_high = quantile(enterococcus_bacteria_concentration_p_1690, prob = 0.95, na.rm = TRUE),
+            turb_low = quantile(turbidity_p_710, prob = 0.05, na.rm = TRUE),
+            turb_high = quantile(turbidity_p_710, prob = 0.95, na.rm = TRUE),
+            cond_low = quantile(conductivity_p_709, prob = 0.05, na.rm = TRUE),
+            cond_high = quantile(conductivity_p_709, prob = 0.95, na.rm = TRUE)
             )
-#### WHAT IS GOING ON HERE!?! WHY WONT THIS WORK! 
 
 
-
-low_wat <- quantile(df1$wattemp_units, 
-                 prob = 0.05, na.rm = TRUE)
-high_wat <- quantile (df1$wattemp_units,
-                      prob = 0.95, na.rm = TRUE)
-tab <- df1 %>%
-  group_by(station_id) %>%
-  quantile (df1$wattemp_units,
-            prob = 0.95, na.rm = TRUE)
-
-wat_ranges <- do.call("rbind",
-        tapply(df1$wattemp_units,                     # Specify numeric column
-               df1$`Station Description`,            # Specify group variable
-               quantile, na.rm = TRUE))
-write.csv(wat_ranges,'tables/wat_ranges.csv')
-
-
-#So I'm trying to create a table with station description 
-# as each row and the 90% CI intervals for all the different
-# parameters as columns. 
-#The quantile function returns the right values but I 
-# don't know how to input them into a compiled table without
-# doing it step by step. 
-# I also can't figure out how to properly group by station! 
-
-
-  t.test(df1$wattemp_units)
-
-  CI(wattemp_units, ci = 0.95) 
-
-CI(df1$wattemp_units, ci= 0.95)
-  CI(wattemp_units, ci = 0.95)
+write.csv(reasonable_values,'tables/reasonable_data_ranges.csv')
+## WOooo! This table shows the 90% most likely values for each
+#parameter at each site. 
 
 
 # Bacteria Summary Tables
