@@ -20,7 +20,11 @@ df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
   clean_names()
 
 #######Clean Data ##########
+#get rid of error values 
+
+
 #Fix temperatures
+
 good_temp<-df %>% 
   mutate(airtemp_units=
            case_when(
