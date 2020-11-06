@@ -247,7 +247,7 @@ monthly_wat_temp <- df2 %>%
   summarise(mean_wat = mean(wattemp_units, na.rm = TRUE),
             sd = sd(wattemp_units, na.rm = TRUE))
 
- # Bar graphs of monthly temperature across sites
+  # Bar graphs of monthly temperature across sites
 monthly_wat_temp %>%
   ggplot(aes(x = month, y = mean_wat)) + 
   geom_bar(stat = 'identity', fill = 'blue') + 
@@ -559,6 +559,6 @@ ggsave('figures/hypo_safety_point.jpg')
 
 site_names <- read.csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv")
 df4 <- merge(x=df3, y = site_names, by.x = 'station_id', by.y='Station.Number')
-
+summary (df4)
 write.csv(df4, file = 'data/tidied_df.csv')
 ##### Daily Turbidity & Bacteria Graphs #####

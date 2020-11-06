@@ -35,6 +35,21 @@ df1 <- df %>%
 
 
 ###### Summary Tables #########
+# bacteria summary - by site 
+tab_entero <- df3[!is.na(df3$entero_grade1), ] %>%
+  group_by(station_id) %>%
+  summarise(ent_avg = mean(entero_grade1),
+            n = length(station_id),
+            sd = sd(entero_grade1),
+            se = sd/sqrt(n))
+tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
+  group_by(station_id) %>%
+  summarise(eco_avg = mean(ecoli_grade1),
+            n = length(ecoli_grade1),
+            sd = sd(ecoli_grade1),
+            se = sd/sqrt(n))
+
+
 #Table by site of reasonable ranges 
 reasonable_values <-df1 %>%
   group_by(Station.Description) %>%
