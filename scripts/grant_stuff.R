@@ -14,40 +14,116 @@ library('colourpicker')
 library('purrr')
 library("Rmisc")
 library(readr)
-library(naniar)
+
 ######### Load Data #######
 df<-read.csv("data/tidied_df.csv")
 summary(df)
 
 
 #####Clean Data ###########
-# Correct Station Names
 
-df$`Station.Description`<-as.factor(df$`Station.Description`)
-df$station_name <- as.factor(df$station_name)
 summary(df)
 
-#Make -9 NA
-df1 <- df %>%
-  replace_with_na(replace = list(-9))
+
 
 #Add order of Upstream-Downstream
 
 
 ###### Summary Tables #########
-# bacteria summary - by site 
-tab_entero <- df3[!is.na(df3$entero_grade1), ] %>%
-  group_by(station_id) %>%
-  summarise(ent_avg = mean(entero_grade1),
-            n = length(station_id),
-            sd = sd(entero_grade1),
-            se = sd/sqrt(n))
-tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
-  group_by(station_id) %>%
-  summarise(eco_avg = mean(ecoli_grade1),
+# bacteria summary - overall by site + 2020 summary
+
+tab_ecoli <- df [!is.na(df$ecoli_grade1), ] %>%
+  dplyr::group_by(Station.Description) %>%
+  dplyr::summarise(eco_avg = mean(ecoli_grade1),
             n = length(ecoli_grade1),
             sd = sd(ecoli_grade1),
             se = sd/sqrt(n))
+ecoli_2020 <- df [!is.na(df$ecoli_grade1), ]%>%
+  filter(year == 2020)%>%
+  dplyr:: group_by(Station.Description) %>%
+  dplyr:: summarise(eco_avg = mean(ecoli_grade1),
+                    n = length(ecoli_grade1),
+                    sd = sd(ecoli_grade1),
+                    se = sd/sqrt(n))
+
+overall_ecoli <- merge(x=tab_ecoli, y = ecoli_2020, 
+                       by.x = 'Station.Description', by.y='Station.Description',
+                       all = TRUE)
+overall_ecoli <- overall_ecoli %>%
+  dplyr::rename(ecoli_avg_total=eco_avg.x,
+          n_total=n.x,
+          sd_total= sd.x,
+          se_total = se.x,
+          ecoli_avg_2020 = eco_avg.y,
+          n_2020 = n.y,
+          sd_2020 = sd.y,
+          se_2020 = se.y)
+
+summary(overall_ecoli)
+write.csv(overall_ecoli, file = 'tables/ecoli_rates_sitely.csv')
+#same thing for ecoli
+tab_entero <- df[!is.na(df$entero_grade1), ] %>%
+  dplyr::group_by(Station.Description) %>%
+  dplyr::summarise(ent_avg = mean(entero_grade1),
+                   n = length(Station.Description),
+                   sd = sd(entero_grade1),
+                   se = sd/sqrt(n))
+entero_2020 <- df [!is.na(df$entero_grade1), ]%>%
+  filter(year == 2020)%>%
+  dplyr:: group_by(Station.Description) %>%
+  dplyr:: summarise(entero_avg = mean(entero_grade1),
+                    n = length(entero_grade1),
+                    sd = sd(entero_grade1),
+                    se = sd/sqrt(n))
+overall_entero <- merge(x=tab_entero, y = entero_2020, 
+                       by.x = 'Station.Description', by.y='Station.Description',
+                       all = TRUE)
+overall_entero <- overall_entero %>%
+  dplyr::rename(entero_avg_total=ent_avg,
+                n_total=n.x,
+                sd_total= sd.x,
+                se_total = se.x,
+                entero_avg_2020 = entero_avg,
+                n_2020 = n.y,
+                sd_2020 = sd.y,
+                se_2020 = se.y)
+write.csv (overall_entero, file = 'tables/entero_rates_sitely.csv')
+
+
+#Yearly bacteria pass rates (overall)
+df$year <- as.factor(df$year)
+ecoli_yearly <- df [!is.na(df$ecoli_grade1), ]%>%
+  dplyr:: group_by(year) %>%
+  dplyr:: summarise(ecoli_avg = mean(ecoli_grade1),
+                    n = length(ecoli_grade1),
+                    sd = sd(ecoli_grade1),
+                    se = sd/sqrt(n))
+write.csv(ecoli_yearly, file = 'tables/ecoli_rates_yearly.csv')
+
+entero_yearly <- df [!is.na(df$entero_grade1), ]%>%
+  dplyr:: group_by(year) %>%
+  dplyr:: summarise(entero_avg = mean(entero_grade1),
+                    n = length(entero_grade1),
+                    sd = sd(entero_grade1),
+                    se = sd/sqrt(n))
+write.csv(entero_yearly, file = 'tables/entero_rates_yearly.csv')
+
+#Yearly bacteria rates per site 
+ecoli_yearly_sitely <- df [!is.na(df$ecoli_grade1), ]%>%
+  dplyr:: group_by(year, Station.Description) %>%
+  dplyr:: summarise(ecoli_avg = mean(ecoli_grade1),
+                    n = length(ecoli_grade1),
+                    sd = sd(ecoli_grade1),
+                    se = sd/sqrt(n))
+write.csv(ecoli_yearly_sitely, file = 'tables/ecoli_rates_yearly&sitely.csv')
+
+entero_yearly_sitely <- df [!is.na(df$entero_grade1), ]%>%
+  dplyr:: group_by(year, Station.Description) %>%
+  dplyr:: summarise(entero_avg = mean(entero_grade1),
+                    n = length(entero_grade1),
+                    sd = sd(entero_grade1),
+                    se = sd/sqrt(n))
+write.csv(entero_yearly_sitely, file = 'tables/entero_rates_yearly&sitely.csv')
 
 
 #Table by site of reasonable ranges 
