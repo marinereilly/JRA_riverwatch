@@ -6,6 +6,7 @@ library(lubridate)
 library(janitor)
 library('colourpicker')
 library('purrr')
+library(naniar)
 
 #######Load Data ##########
 df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
