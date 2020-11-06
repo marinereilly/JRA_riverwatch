@@ -14,18 +14,22 @@ library('colourpicker')
 library('purrr')
 library("Rmisc")
 library(readr)
+library(naniar)
 ######### Load Data #######
 df<-read.csv("data/tidied_df.csv")
 summary(df)
-summary(site_names)
+
 
 #####Clean Data ###########
 # Correct Station Names
 
 df$`Station.Description`<-as.factor(df$`Station.Description`)
 df$station_name <- as.factor(df$station_name)
-summary(df1 )
+summary(df)
 
+#Make -9 NA
+df1 <- df %>%
+  replace_with_na(replace = list(-9))
 
 #Add order of Upstream-Downstream
 

@@ -21,7 +21,14 @@ df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
 
 #######Clean Data ##########
 
-
+df <- df %>%
+  replace_with_na(replace = list(bacteria_threshold_p_1716 = -9,
+                                 duplicate_bacteria_concentration_f_751=-9,
+                                 turbidity_p_710 = -9,
+                                 water_temperature_p_708 = -9,
+                                 collection_date = -9
+                                 ))
+summary(df)
 #Fix temperatures
 
 good_temp<-df %>% 
@@ -348,7 +355,7 @@ df_plots$plots[[10]]
 
 
 #use the map function with ggsave to save named figures. 
-dir.create("./figures/station_plots")
+
 map2(paste0("./figures/station_plots/", df_plots$plot_id, ".jpg"), 
        df_plots$plots, ggsave)
 
