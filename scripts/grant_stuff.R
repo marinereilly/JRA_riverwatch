@@ -5,15 +5,14 @@
 ## grant information 
 
 ####### Install Packages #########
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library("Rmisc")
+library(tidyverse)
 library(lubridate)
 library(janitor)
 library('colourpicker')
 library('purrr')
-library("Rmisc")
-library(readr)
+
+
 
 ######### Load Data #######
 df<-read.csv("data/tidied_df.csv")
@@ -22,7 +21,7 @@ summary(df)
 
 #####Clean Data ###########
 
-summary(df)
+
 
 
 
@@ -127,7 +126,7 @@ write.csv(entero_yearly_sitely, file = 'tables/entero_rates_yearly&sitely.csv')
 
 
 #Table by site of reasonable ranges 
-reasonable_values <-df1 %>%
+reasonable_values <-df %>%
   group_by(Station.Description) %>%
   summarise(wat_low = quantile(wattemp_units, prob = 0.05, na.rm = TRUE),
             wat_high = quantile(wattemp_units, prob = 0.95, na.rm = TRUE),
@@ -148,21 +147,66 @@ write.csv(reasonable_values,'tables/reasonable_data_ranges.csv')
 ## WOooo! This table shows the 90% most likely values for each
 #parameter at each site. 
 
+######## Making Graphs ###############
 
-# Bacteria Summary Tables
-tab_entero <- df1[!is.na(df1$entero_grade1), ] %>%
-  group_by(`Station Description`) %>%
-  summarise(ent_avg = mean(entero_grade1),
-            n = length(station_id),
-            sd = sd(entero_grade1),
-            se = sd/sqrt(n))
+# Set Theme 
+theme_set(theme_classic() +
+            theme(axis.text.x = element_text(size = 8, angle = 90, 
+                                             hjust = 1, vjust = 1),
+                  plot.title = element_text(hjust = .5) )
+)
+# doing stuff 
+df$day <- day(df$collection_date)
+df$fake_date <- paste('1996', df$month, df$day)
+summary(df$fake_date)
+summary(df)
+df1 <- df
+df1$fake_date <- ymd(df$fake_date)
+summary(df1)
+df1$year <- as.factor(df1$year)
 
-tab_ecoli <- df1 [!is.na(df1$ecoli_grade1), ] %>%
-  group_by(`Station Description`) %>%
-  summarise(eco_avg = mean(ecoli_grade1),
-            n = length(ecoli_grade1),
-            sd = sd(ecoli_grade1),
-            se = sd/sqrt(n))
-write.csv(tab_ecoli, file = 'tables/ecoli_pass_rate_sitely.csv')
-write.csv(tab_entero, file = 'tables/entero_pass_rate_sitely.csv')
+df1%>%
+  ggplot(aes(x = fake_date, y = e_coli_count, colour = year)) +
+  geom_point(size = 2)
 
+#### Making multiplots for parameter and date
+#make data long for mapping
+df_long<-df1 %>% 
+  select(fake_date,
+         year,
+         Station.Description,
+         air_temp=airtemp_units,
+         conductivity=conductivity_p_709,
+         e_coli=e_coli_count,
+         entero=enterococcus_bacteria_concentration_p_1690,
+         salinity=salinity_p_1715,
+         turbidity=turbidity_p_710,
+         water_temp=wattemp_units) %>% 
+  pivot_longer(cols=c("air_temp","conductivity","e_coli","entero","salinity",
+                      "turbidity","water_temp"),
+               values_to= "value",
+               names_to= "parameter") %>% 
+  drop_na(value)
+
+df_long<-df_long %>% 
+  mutate(plot_id=paste0(Station.Description,"_",parameter))
+
+df_nest<-df_long %>% 
+  group_by(plot_id) %>% 
+  nest()
+
+df_plots<-df_nest %>% 
+  mutate(plots=map2(data,plot_id, ~ggplot(.x)+
+                      ggtitle(.y)+
+                      geom_point(aes(x=fake_date,y=value, color = year))+
+                      labs(x = "Collection Date") +
+                      theme_classic()))
+df_plots$plots[[61]]
+
+length(unique(df_long$plot_id))
+
+
+## Save plots 
+#Not all of these are saving? 
+map2(paste0("./figures/conditions_by_date/", df_plots$plot_id, ".jpg"), 
+     df_plots$plots, ggsave)
