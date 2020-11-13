@@ -174,7 +174,7 @@ df1%>%
 df_long<-df1 %>% 
   select(fake_date,
          year,
-         Station.Description,
+         station_id,
          air_temp=airtemp_units,
          conductivity=conductivity_p_709,
          e_coli=e_coli_count,
@@ -189,7 +189,7 @@ df_long<-df1 %>%
   drop_na(value)
 
 df_long<-df_long %>% 
-  mutate(plot_id=paste0(Station.Description,"_",parameter))
+  mutate(plot_id=paste0(station_id,"_",parameter))
 
 df_nest<-df_long %>% 
   group_by(plot_id) %>% 

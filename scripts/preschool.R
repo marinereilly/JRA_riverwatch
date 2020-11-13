@@ -556,9 +556,19 @@ df3 %>%
 ggsave('figures/hypo_safety_point.jpg')  
 
 #Fix station names
+library(readr)
+site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv") %>% 
+  clean_names()
 
-site_names <- read.csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv")
-df4 <- merge(x=df3, y = site_names, by.x = 'station_id', by.y='Station.Number')
 summary (df4)
+
+df4<-site_names %>% 
+  rename(station_id=station_number)%>% 
+  left_join(df3,., by=c("station_id")) %>% 
+  mutate(station_description=case_when(
+    station_description=="Hopewell Rt. 10"            ~ "Hopewell Rt 10",
+    station_description=="Farmville Main St. Bridge"  ~ "Farmville Main St Bridge",
+    station_description=="Rockett\u0092s Landing"     ~ "Rocketts Landing",
+    TRUE                                              ~ station_description
+  ))
 write.csv(df4, file = 'data/tidied_df.csv')
-##### Daily Turbidity & Bacteria Graphs #####
