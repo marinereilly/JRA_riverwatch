@@ -587,6 +587,8 @@ df4<-site_names %>%
     station_description == 'Rockett\x92s Landing' ~ "Rocketts Landing",
     TRUE                                              ~ station_description
   ))
+
+df4$station_description[startsWith(df4$station_description, 'Rockett')] <- 'Rocketts Landing'
 df4$station_description <- as.factor(df4$station_description)
 summary(df4$station_description)
 write.csv(df4, file = 'data/tidied_df.csv')
