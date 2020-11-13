@@ -59,12 +59,62 @@ df1$month <- as.factor(df1$month)
 summary(df1$wattemp_units)
 summary(df1)
 
-######### Box Plots ###########
+
+###Misc. editing and cleaning 
+df2<-df1 %>%
+  mutate(e_coli_count = 
+           case_when(
+             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712 * 33.33,
+             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_count_p_712
+           ))
+
+
+df2<- df2 %>%
+  mutate(e_coli_concentration = 
+           case_when(
+             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712/3,
+             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_concentration_p_711
+           ))
+
+df2 <-df2 %>%
+  mutate(ecoli_grade = case_when(e_coli_count >= 235 ~ 'F',
+                                 e_coli_count< 235 ~ 'P'))
+#Create Pass/Fail for E. Enterococcus
+df2 <- df2 %>%
+  mutate(enterococcus_grade=
+           case_when(enterococcus_bacteria_concentration_p_1690 >= 104 ~ 'F',
+                     enterococcus_bacteria_concentration_p_1690 < 104 ~ 'P'))
+
+
 theme_set(theme_classic() +
             theme(axis.text.x = element_text(size = 8, angle = 90, 
                                             hjust = 1, vjust = 1),
                   plot.title = element_text(hjust = .5) )
           )
+
+
+
+df2$ecoli_grade <- as.factor(df2$ecoli_grade)
+df2$station_id <- as.factor(df2$station_id)
+
+#substitute pass/fails for 1 and 0
+df3 <- df2 %>%
+  mutate(ecoli_grade1 = 
+           case_when(ecoli_grade %in% c('P') ~ (1),
+                     ecoli_grade %in% c('F') ~ (0))) %>%
+  mutate(entero_grade1 = 
+           case_when(enterococcus_grade%in% c('P') ~ (1),
+                     enterococcus_grade %in% c('F') ~ (0)))
+
+df3$temp_tot = df3$wattemp_units + df3$airtemp_units
+
+df3 <- df3 %>%
+  mutate(hypo_safe = 
+           case_when(temp_tot <= 37.778 ~ 'F',
+                     temp_tot > 37.778 ~ 'P'))
+
+
+### OKAY SKIP PAST ALL OF THIS UNLESS TRYING TO CREATE FIGURES, GO TO BOTTOM
 
 # Air Temp per Site
 df1 %>%
@@ -137,20 +187,7 @@ count(filter(df, e_coli_count_p_712 == 100))
 
 #Cleaning E Coli Counts/Concentrations!
 summary(df1$e_coli_concentration_p_711)
-df2<-df1 %>%
-  mutate(e_coli_count = 
-           case_when(
-             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712 * 33.33,
-             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_count_p_712
-           ))
 
-
-df2<- df2 %>%
-  mutate(e_coli_concentration = 
-           case_when(
-             e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712/3,
-             e_coli_concentration_p_711 < e_coli_count_p_712 ~ e_coli_concentration_p_711
-           ))
 
 
 count(filter(df2, e_coli_concentration == 34))
@@ -174,9 +211,7 @@ ggsave('figures/OG_ecoli_concent_hist.jpg')
 summary(df2$e_coli_concentration)
 
 #Create Pass/Fail for E.Coli
-df2 <-df2 %>%
-  mutate(ecoli_grade = case_when(e_coli_count >= 235 ~ 'F',
-                                 e_coli_count< 235 ~ 'P'))
+
 #Figure out Enterococcus
 summary(df2$enterococcus_bacteria_concentration_p_1690)
 df2%>%
@@ -187,11 +222,7 @@ df2%>%
 
 #Something seems wrong here?? Is there really this little data? 
 
-#Create Pass/Fail for E. Enterococcus
-df2 <- df2 %>%
-  mutate(enterococcus_grade=
-           case_when(enterococcus_bacteria_concentration_p_1690 >= 104 ~ 'F',
-                     enterococcus_bacteria_concentration_p_1690 < 104 ~ 'P'))
+
 
 #make pass/fail graphs per site
 df2 %>%
@@ -379,18 +410,6 @@ df_long1<-df2 %>%
                names_to= "parameter") %>% 
   drop_na(value)
 
-#######Summary Tables ########
-df2$ecoli_grade <- as.factor(df2$ecoli_grade)
-df2$station_id <- as.factor(df2$station_id)
-
-#substitute pass/fails for 1 and 0
-df3 <- df2 %>%
-  mutate(ecoli_grade1 = 
-    case_when(ecoli_grade %in% c('P') ~ (1),
-              ecoli_grade %in% c('F') ~ (0))) %>%
-  mutate(entero_grade1 = 
-           case_when(enterococcus_grade%in% c('P') ~ (1),
-                     enterococcus_grade %in% c('F') ~ (0)))
 
 #make summary tables
 tab_entero <- df3[!is.na(df3$entero_grade1), ] %>%
@@ -465,12 +484,7 @@ ggsave('figures/overall_entero_safety.jpg')
   
 #####Making Hypothermia limit graphs #######
 
-df3$temp_tot = df3$wattemp_units + df3$airtemp_units
 
-df3 <- df3 %>%
-  mutate(hypo_safe = 
-           case_when(temp_tot <= 37.778 ~ 'F',
-                     temp_tot > 37.778 ~ 'P'))
 df3 %>%
   filter(!is.na(hypo_safe)) %>%
   ggplot(aes( x =station_id, fill = hypo_safe)) +
@@ -555,7 +569,7 @@ df3 %>%
         title = 'Hypothermia Safety')
 ggsave('figures/hypo_safety_point.jpg')  
 
-#Fix station names
+##########Fix station names (Come back here) #########
 library(readr)
 site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv") %>% 
   clean_names()
@@ -569,6 +583,10 @@ df4<-site_names %>%
     station_description=="Hopewell Rt. 10"            ~ "Hopewell Rt 10",
     station_description=="Farmville Main St. Bridge"  ~ "Farmville Main St Bridge",
     station_description=="Rockett\u0092s Landing"     ~ "Rocketts Landing",
+    station_description == 'Rockett<92>s Landing' ~ 'Rocketts Landing',
+    station_description == 'Rockett\x92s Landing' ~ "Rocketts Landing",
     TRUE                                              ~ station_description
   ))
+df4$station_description <- as.factor(df4$station_description)
+summary(df4$station_description)
 write.csv(df4, file = 'data/tidied_df.csv')

@@ -6,7 +6,9 @@
 
 ####### Install Packages #########
 library("Rmisc")
-library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
 library(lubridate)
 library(janitor)
 library('colourpicker')
@@ -156,12 +158,11 @@ theme_set(theme_classic() +
                   plot.title = element_text(hjust = .5) )
 )
 # doing stuff 
-df$day <- day(df$collection_date)
-df$fake_date <- paste('1996', df$month, df$day)
-summary(df$fake_date)
-summary(df)
-df1 <- df
-df1$fake_date <- ymd(df$fake_date)
+df1<- df
+df1$day <- day(df1$collection_date)
+df1$fake_date <- paste('1996', df$month, df$day)
+summary(df1$fake_date)
+df1$fake_date <- ymd(df1$fake_date)
 summary(df1)
 df1$year <- as.factor(df1$year)
 
@@ -170,11 +171,17 @@ df1%>%
   geom_point(size = 2)
 
 #### Making multiplots for parameter and date
+df1$station_description <- as.character(df1$station_description)
+df1%>%
+  mutate(station_description = case_when(
+           station_description == 'Rockett<92>s Landing' ~ 'Rocketts Landing',
+                     TRUE ~ station_description))
+summary(df1$station_description)
 #make data long for mapping
 df_long<-df1 %>% 
   select(fake_date,
          year,
-         station_id,
+         station_description,
          air_temp=airtemp_units,
          conductivity=conductivity_p_709,
          e_coli=e_coli_count,
@@ -189,7 +196,7 @@ df_long<-df1 %>%
   drop_na(value)
 
 df_long<-df_long %>% 
-  mutate(plot_id=paste0(station_id,"_",parameter))
+  mutate(plot_id=paste0(station_description,"_",parameter))
 
 df_nest<-df_long %>% 
   group_by(plot_id) %>% 
@@ -201,12 +208,12 @@ df_plots<-df_nest %>%
                       geom_point(aes(x=fake_date,y=value, color = year))+
                       labs(x = "Collection Date") +
                       theme_classic()))
-df_plots$plots[[61]]
+df_plots$plots[[105]]
 
 length(unique(df_long$plot_id))
-
-
+df1$station_description <- as.factor(df1$station_description)
+summary(df1$station_description)
 ## Save plots 
-#Not all of these are saving? 
+
 map2(paste0("./figures/conditions_by_date/", df_plots$plot_id, ".jpg"), 
      df_plots$plots, ggsave)
