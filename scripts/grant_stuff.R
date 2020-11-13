@@ -160,7 +160,7 @@ theme_set(theme_classic() +
 # doing stuff 
 df1<- df
 df1$day <- day(df1$collection_date)
-df1$fake_date <- paste('1996', df$month, df$day)
+df1$fake_date <- paste('1996', df1$month, df1$day)
 summary(df1$fake_date)
 df1$fake_date <- ymd(df1$fake_date)
 summary(df1)
@@ -208,7 +208,7 @@ df_plots<-df_nest %>%
                       geom_point(aes(x=fake_date,y=value, color = year))+
                       labs(x = "Collection Date") +
                       theme_classic()))
-df_plots$plots[[105]]
+df_plots$plots[[62]]
 
 length(unique(df_long$plot_id))
 df1$station_description <- as.factor(df1$station_description)
