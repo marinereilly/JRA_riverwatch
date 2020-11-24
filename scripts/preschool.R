@@ -9,7 +9,7 @@ library('purrr')
 library(naniar)
 
 #######Load Data ##########
-df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
+df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",sheet = "Edited Data",
                       col_types = c("text","date","numeric","text",
                                     "numeric","text","numeric", "text",
                                     "numeric","text","numeric","numeric",
@@ -17,11 +17,13 @@ df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",
                                     "text","numeric","numeric","numeric",
                                     "numeric","numeric","text","text",
                                     "logical", "numeric","text","text",
-                                    "numeric","text","text","text","text")) %>% 
+                                    "numeric","text","text","text","text",
+                                    'text', 'text','text', 'date', 'text')) %>% 
   clean_names()
 
 #######Clean Data ##########
-
+df$x34 <- NULL
+df$x35 <- NULL
 df <- df %>%
   replace_with_na(replace = list(bacteria_threshold_p_1716 = -9,
                                  duplicate_bacteria_concentration_f_751=-9,
