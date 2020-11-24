@@ -1,8 +1,9 @@
-"","year","Station.Description","entero_avg","n","sd","se"
-"1","2020","	Chickahominy Riverfront Park",1,16,0,0
-"2","2020","	Denbigh Boat Ramp",0,1,NA,NA
-"3","2020","	Hampton River",1,1,NA,NA
-"4","2020","	Jamestown Beach",1,16,0,0
-"5","2020","	Powhatan Creek Park",0.25,16,0.447213595499958,0.111803398874989
-"6","2020","	Riveredge Park at Public Boat Landing",1,1,NA,NA
-"7","2020","	Tucker Park at Maidens Crossing",0,2,0,0
+"","year","station_description","entero_avg","n","sd","se"
+"1","2020","Chickahominy Riverfront Park",1,16,0,0
+"2","2020","Denbigh Boat Ramp",0,1,NA,NA
+"3","2020","Hampton River",1,1,NA,NA
+"4","2020","Jamestown Beach",1,16,0,0
+"5","2020","Powhatan Creek Park",0.25,16,0.447213595499958,0.111803398874989
+"6","2020","Riveredge Park at Public Boat Landing",1,1,NA,NA
+"7","2020","Tucker Park at Maidens Crossing",0,2,0,0
+"8","2020",NA,0.931034482758621,29,0.257880714777564,0.0478872465399596
