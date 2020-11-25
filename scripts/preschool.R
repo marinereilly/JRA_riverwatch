@@ -178,8 +178,9 @@ df1 %>%
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200) +
-  labs(x = 'E. coli Count', title = 'Original Data')
+  labs(x = 'E. Coli Count', title = 'Original Data')
 ggsave('figures/OG_ecoli_count_hist.jpg')
+
 #What a mess! E.coli count is the higher value
 
 count(filter(df, e_coli_concentration_p_711 == 100))
