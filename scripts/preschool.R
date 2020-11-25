@@ -172,14 +172,14 @@ df1%>%
   ylim(0,200) + 
   xlim(0,200) +
   labs(x = 'E. coli Concentration', title = 'Original Data')
-ggsave('figures/OG_ecoli_count_hist.jpg')
+ggsave('figures/OG_ecoli_concentration_hist.jpg')
 df1 %>%
   ggplot(aes(e_coli_count_p_712)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200) +
   labs(x = 'E. coli Count', title = 'Original Data')
-ggsave('figures/OG_ecoli_concent_hist.jpg')
+ggsave('figures/OG_ecoli_count_hist.jpg')
 #What a mess! E.coli count is the higher value
 
 count(filter(df, e_coli_concentration_p_711 == 100))
@@ -199,14 +199,15 @@ df2%>%
   ggplot(aes(e_coli_count)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
-  xlim(0,200)
+  xlim(0,200) +
+  labs(x = 'E. Coli Count', title = 'Tidied Data')
 ggsave('figures/good_ecoli_count_hist.jpg')
 df2 %>%
   ggplot(aes(e_coli_concentration)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200)
-ggsave('figures/OG_ecoli_concent_hist.jpg')
+ggsave('figures/good_ecoli_concent_hist.jpg')
 # This concentration might be slightly erroneous but 
 # we will just use the ecoli count
 
