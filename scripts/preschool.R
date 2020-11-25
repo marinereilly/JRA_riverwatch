@@ -140,8 +140,7 @@ summary(df4$station_description)
 write.csv(df4, file = 'data/tidied_df.csv')
 
 
-### OKAY SKIP PAST ALL OF THIS UNLESS TRYING TO CREATE FIGURES, GO TO BOTTOM
-
+######Figure TIME######
 # Air Temp per Site
 df1 %>%
   filter (!airtemp_units <= 0) %>%
@@ -515,19 +514,32 @@ ggsave('figures/overall_entero_safety.jpg')
 #####Making Hypothermia limit graphs #######
 
 
-df3 %>%
+df4 %>%
   filter(!is.na(hypo_safe)) %>%
-  ggplot(aes( x =station_id, fill = hypo_safe)) +
+  drop_na(station_description) %>%
+  ggplot(aes( x =station_description, fill = hypo_safe)) +
   geom_bar(stat='count') +
-  labs(x = "Station ID", y = 'Count', 
+  labs(x = "Station Name", y = 'Days Sampled', 
        fill = "Hypothermia Safety",
-       title = 'Hypothermia Safety All Years') + 
-  scale_fill_manual(values = c("#00EEEE", "darkorange"),
+       title = 'Hypothermia Safe Days Across All Years') + 
+  scale_fill_manual(values = c('#8EC4ED', '#188F30'),
                       name = "Hypothermia Safety",
                       labels = c('Too Cold', 'Safe')
                       )
 ggsave('figures/hypo_grade_all.jpg')
 
+df4 %>%
+  filter(!is.na(hypo_safe)) %>%
+  drop_na(month) %>%
+  ggplot(aes( x =month, fill = hypo_safe)) +
+  geom_bar(stat='count') +
+  labs(x = "Station Name", y = 'Days Sampled', 
+       fill = "Hypothermia Safety",
+       title = 'Hypothermia Safe Days Across All Years') + 
+  scale_fill_manual(values = c('#8EC4ED', '#188F30'),
+                    name = "Hypothermia Safety",
+                    labels = c('Too Cold', 'Safe')
+  )
 
 
 df3 %>%
