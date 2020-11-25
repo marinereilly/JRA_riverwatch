@@ -89,7 +89,7 @@ df2 <- df2 %>%
 
 
 theme_set(theme_classic() +
-            theme(axis.text.x = element_text(size = 8, angle = 90, 
+            theme(axis.text.x = element_text(size = 8, angle = 45, 
                                             hjust = 1, vjust = 1),
                   plot.title = element_text(hjust = .5) )
           )
@@ -114,6 +114,30 @@ df3 <- df3 %>%
   mutate(hypo_safe = 
            case_when(temp_tot <= 37.778 ~ 'F',
                      temp_tot > 37.778 ~ 'P'))
+
+##########Fix station names  #########
+library(readr)
+site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv") %>% 
+  clean_names()
+
+summary (df4)
+
+df4<-site_names %>% 
+  rename(station_id=station_number)%>% 
+  left_join(df3,., by=c("station_id")) %>% 
+  mutate(station_description=case_when(
+    station_description=="Hopewell Rt. 10"            ~ "Hopewell Rt 10",
+    station_description=="Farmville Main St. Bridge"  ~ "Farmville Main St Bridge",
+    station_description=="Rockett\u0092s Landing"     ~ "Rocketts Landing",
+    station_description == 'Rockett<92>s Landing' ~ 'Rocketts Landing',
+    station_description == 'Rockett\x92s Landing' ~ "Rocketts Landing",
+    TRUE                                              ~ station_description
+  ))
+
+df4$station_description[startsWith(df4$station_description, 'Rockett')] <- 'Rocketts Landing'
+df4$station_description <- as.factor(df4$station_description)
+summary(df4$station_description)
+write.csv(df4, file = 'data/tidied_df.csv')
 
 
 ### OKAY SKIP PAST ALL OF THIS UNLESS TRYING TO CREATE FIGURES, GO TO BOTTOM
@@ -240,15 +264,16 @@ df2 %>%
                       labels = c('Fail', 'Pass')) 
   
 ggsave('figures/ecoli_grade_count.jpg')
-df2 %>%
+df4 %>%
   filter(!is.na(ecoli_grade)) %>%
-  ggplot(aes( x =station_id, fill = ecoli_grade, )) +
+  ggplot(aes( x =station_name, fill = ecoli_grade )) +
   geom_bar(stat='count',position = 'fill') +
   labs(x = "Station ID", y = 'Proportion', 
        fill = "Water Quality Grade",
        title = 'E. Coli Safety All Years') + 
   scale_fill_discrete(name = "Water Quality Grade",
-                      labels = c('Fail', 'Pass'))
+                      labels = c('Fail', 'Pass')) +
+  
 ggsave('figures/ecoli_grade_prop.jpg')
 
 df2 %>%
@@ -574,26 +599,3 @@ df3 %>%
         title = 'Hypothermia Safety')
 ggsave('figures/hypo_safety_point.jpg')  
 
-##########Fix station names (Come back here) #########
-library(readr)
-site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv") %>% 
-  clean_names()
-
-summary (df4)
-
-df4<-site_names %>% 
-  rename(station_id=station_number)%>% 
-  left_join(df3,., by=c("station_id")) %>% 
-  mutate(station_description=case_when(
-    station_description=="Hopewell Rt. 10"            ~ "Hopewell Rt 10",
-    station_description=="Farmville Main St. Bridge"  ~ "Farmville Main St Bridge",
-    station_description=="Rockett\u0092s Landing"     ~ "Rocketts Landing",
-    station_description == 'Rockett<92>s Landing' ~ 'Rocketts Landing',
-    station_description == 'Rockett\x92s Landing' ~ "Rocketts Landing",
-    TRUE                                              ~ station_description
-  ))
-
-df4$station_description[startsWith(df4$station_description, 'Rockett')] <- 'Rocketts Landing'
-df4$station_description <- as.factor(df4$station_description)
-summary(df4$station_description)
-write.csv(df4, file = 'data/tidied_df.csv')
