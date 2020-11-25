@@ -291,6 +291,7 @@ monthly_wat_temp %>%
   theme(panel.grid = element_blank()) +
   labs(x = 'Month', y = 'Water Temp C') + 
   facet_wrap(~`station_id`)
+
 ggsave('figures/monthly_wat_temp.jpg')
 
 #Summarize air temp by month
