@@ -580,3 +580,4 @@ df4 %>%
         title = 'Hypothermia Safety')
 ggsave('figures/hypo_safety_point.jpg')  
 
+
