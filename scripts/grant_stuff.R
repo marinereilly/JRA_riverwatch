@@ -29,7 +29,7 @@ df$X <- NULL
 
 #Add order of Upstream-Downstream
 
-
+unique(df$year)
 ###### Summary Tables #########
 # bacteria summary - overall by site + 2020 summary
 

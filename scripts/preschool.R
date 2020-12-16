@@ -9,7 +9,8 @@ library('purrr')
 library(naniar)
 
 #######Load Data ##########
-df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",sheet = "Edited Data",
+df<-readxl::read_xlsx("data/HAIRWORKINGcopy1.xlsx", 
+                       sheet = "Edited Data",
                       col_types = c("text","date","numeric","text",
                                     "numeric","text","numeric", "text",
                                     "numeric","text","numeric","numeric",
@@ -18,13 +19,14 @@ df<-readxl::read_xlsx("~/Desktop/JRA/HAIRWORKINGcopy.xlsx",sheet = "Edited Data"
                                     "numeric","numeric","text","text",
                                     "logical", "numeric","text","text",
                                     "numeric","text","text","text","text",
-                                    'text', 'text','text', 'date', 'text')) %>% 
+                                    'text', 'date', 'text')) %>% 
   clean_names()
 
 #######Clean Data ##########
-df$x34 <- NULL
-df$x35 <- NULL
-df <- df %>%
+
+df1<- df%>%
+  distinct()
+df1 <- df1 %>%
   replace_with_na(replace = list(bacteria_threshold_p_1716 = -9,
                                  duplicate_bacteria_concentration_f_751=-9,
                                  turbidity_p_710 = -9,
@@ -34,7 +36,7 @@ df <- df %>%
 summary(df)
 #Fix temperatures
 
-good_temp<-df %>% 
+good_temp<-df1 %>% 
   mutate(airtemp_units=
            case_when(
              air_temperature_p_707>=50  ~ (air_temperature_p_707-32)*5/9,
@@ -49,21 +51,20 @@ good_temp<-good_temp %>%
 
 ######Check out data ########
 summary(good_temp)
+unique(df1$year)
 
 
 #### Date Time! ########
-df1 <- good_temp
-df1$collection_date <- ymd_hms(df1$collection_date)
-df1$month <- month(df1$collection_date)
-df1$year <- year(df1$collection_date)
-df1$year <- as.factor(df1$year)
-df1$month <- as.factor(df1$month)
-summary(df1$wattemp_units)
-summary(df1)
+df2 <- good_temp
+df2$collection_date <- ymd_hms(df2$collection_date)
+df2$month <- month(df2$collection_date)
+df2$year <- year(df2$collection_date)
+df2$year <- as.factor(df2$year)
+df2$month <- as.factor(df2$month)
 
 
 ###Misc. editing and cleaning 
-df2<-df1 %>%
+df2<-df2 %>%
   mutate(e_coli_count = 
            case_when(
              e_coli_concentration_p_711 > e_coli_count_p_712 ~ e_coli_count_p_712 * 33.33,
@@ -115,15 +116,19 @@ df3 <- df3 %>%
            case_when(temp_tot <= 37.778 ~ 'F',
                      temp_tot > 37.778 ~ 'P'))
 
+df3 <- df3 %>%
+  mutate(hypo_safe1 = 
+           case_when(hypo_safe %in% c('P') ~ (1),
+                     hypo_safe %in% c('F') ~ (0)))
+
 ##########Fix station names  #########
 library(readr)
 site_names <- read_csv("data/Riverwatch SiteID, Names, Location - Sheet1.csv") %>% 
   clean_names()
 
-summary (df4)
 
 df4<-site_names %>% 
-  rename(station_id=station_number)%>% 
+  rename('station_id'='station_number')%>% 
   left_join(df3,., by=c("station_id")) %>% 
   mutate(station_description=case_when(
     station_description=="Hopewell Rt. 10"            ~ "Hopewell Rt 10",
@@ -142,7 +147,7 @@ write.csv(df4, file = 'data/tidied_df.csv')
 
 ######Figure TIME######
 # Air Temp per Site
-df1 %>%
+df4 %>%
   filter (!airtemp_units <= 0) %>%
   ggplot(aes(`station_id`, airtemp_units)) +
          geom_boxplot() + 
@@ -153,7 +158,7 @@ df1 %>%
 ggsave('figures/air_temp_box.jpg')
         
 # Water Temp per site
-df1 %>%
+df4 %>%
   filter(!wattemp_units <= 0) %>%
   ggplot(aes(`station_id`, wattemp_units)) +
   geom_boxplot()+ 
@@ -162,7 +167,7 @@ df1 %>%
 ggsave('figures/wat_temp_box.jpg')
 
 # Turbidity per site
-df1 %>%
+df4 %>%
   filter(!turbidity_p_710 == 1056) %>%
   filter(!turbidity_p_710 == -9) %>%
     ggplot(aes(`station_id`, turbidity_p_710)) + 
@@ -175,7 +180,7 @@ ggsave('figures/turb_box.jpg')
 
 
 # Conductivity per Site
-df1 %>%
+df4 %>%
   filter(!conductivity_p_709==22027) %>%
   filter(!conductivity_p_709 == -9) %>%
   ggplot(aes(`station_id`, conductivity_p_709)) + 
@@ -186,7 +191,7 @@ ggsave('figures/cond_box.jpg')
 # What are the units for conductivity? 
 #Is it possible to convert the entries in incorrect units?
 
-summary(df)
+
 
 ######bacteria########
 df1%>%
@@ -206,27 +211,19 @@ ggsave('figures/OG_ecoli_count_hist.jpg')
 
 #What a mess! E.coli count is the higher value
 
-count(filter(df, e_coli_concentration_p_711 == 100))
-count(filter(df, e_coli_count_p_712 == 100))
 
 
 
 #Cleaning E Coli Counts/Concentrations!
-summary(df1$e_coli_concentration_p_711)
 
-
-
-count(filter(df2, e_coli_concentration == 34))
-count(filter(df2, e_coli_count == 34))
-
-df2%>%
+df4%>%
   ggplot(aes(e_coli_count)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
   xlim(0,200) +
   labs(x = 'E. Coli Count', title = 'Tidied Data')
 ggsave('figures/good_ecoli_count_hist.jpg')
-df2 %>%
+df4 %>%
   ggplot(aes(e_coli_concentration)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
@@ -235,13 +232,13 @@ ggsave('figures/good_ecoli_concent_hist.jpg')
 # This concentration might be slightly erroneous but 
 # we will just use the ecoli count
 
-summary(df2$e_coli_concentration)
+
 
 #Create Pass/Fail for E.Coli
 
 #Figure out Enterococcus
-summary(df2$enterococcus_bacteria_concentration_p_1690)
-df2%>%
+summary(df4$enterococcus_bacteria_concentration_p_1690)
+df4%>%
   ggplot(aes(enterococcus_bacteria_concentration_p_1690)) +
   geom_histogram(binwidth = .2) +
   ylim(0,200) + 
@@ -252,30 +249,37 @@ df2%>%
 
 
 #make pass/fail graphs per site
-df2 %>%
+df4 %>%
   filter(!is.na(ecoli_grade)) %>%
-  ggplot(aes( x =station_id, fill = ecoli_grade)) +
+  filter(!is.na(station_name)) %>%
+  ggplot(aes( x =station_name, fill = ecoli_grade)) +
   geom_bar(stat='count') +
-  labs(x = "Station ID", y = 'Count', 
+  labs(x = "Site Name", y = 'Days Sampled', 
        fill = "Water Quality Grade",
-       title = 'E. Coli Safety All Years') + 
-  scale_fill_discrete(name = "Water Quality Grade",
-                      labels = c('Fail', 'Pass')) 
-  
+       title = 'E. Coli Safety') + 
+  scale_fill_manual(values = c('red3', '#188F30'),
+                    name = "E. Coli Safety",
+                    labels = c('Fail', 'Pass')) +
+  theme(plot.margin = unit(c(.5,.5,.5,1.7), 'cm'))
+
 ggsave('figures/ecoli_grade_count.jpg')
+
+
 df4 %>%
   filter(!is.na(ecoli_grade)) %>%
   ggplot(aes( x =station_name, fill = ecoli_grade )) +
   geom_bar(stat='count',position = 'fill') +
-  labs(x = "Station ID", y = 'Proportion', 
+  labs(x = "Site Name", y = 'Proportion of Days Sampled', 
        fill = "Water Quality Grade",
-       title = 'E. Coli Safety All Years') + 
-  scale_fill_discrete(name = "Water Quality Grade",
-                      labels = c('Fail', 'Pass')) +
+       title = 'E. Coli Safety') + 
+  scale_fill_manual(values = c('red3', '#188F30'),
+                    name = "E. Coli Safety",
+                    labels = c('Fail', 'Pass')) +
+  theme(plot.margin = unit(c(.5,.5,.5,1.7), 'cm'))
   
 ggsave('figures/ecoli_grade_prop.jpg')
 
-df2 %>%
+df4 %>%
   filter(!is.na(enterococcus_grade)) %>%
   ggplot(aes( x =station_id, fill = enterococcus_grade)) +
   geom_bar(stat='count') +
@@ -286,7 +290,7 @@ df2 %>%
                       labels = c('Fail', 'Pass'))
 ggsave('figures/entero_grade_count.jpg')
 
-df2 %>%
+df4 %>%
   filter(!is.na(enterococcus_grade)) %>%
   ggplot(aes( x =station_id, fill = enterococcus_grade)) +
   geom_bar(stat='count', position = 'fill') +
@@ -300,7 +304,7 @@ ggsave('figures/entero_grade_prop.jpg')
 
 #####Monthly #########
 #summarise water temp by month
-monthly_wat_temp <- df2 %>%
+monthly_wat_temp <- df4 %>%
   filter(wattemp_units > 0) %>%
   group_by(month, station_id) %>%
   summarise(mean_wat = mean(wattemp_units, na.rm = TRUE),
@@ -319,7 +323,7 @@ monthly_wat_temp %>%
 ggsave('figures/monthly_wat_temp.jpg')
 
 #Summarize air temp by month
-monthly_air_temp <- df2 %>%
+monthly_air_temp <- df4 %>%
   filter(!airtemp_units == -9) %>%
   group_by(month, station_id) %>%
   summarise(mean_air = mean(airtemp_units, na.rm = TRUE),
@@ -341,7 +345,7 @@ monthly_air_temp %>%
 ggsave('figures/monthly_air_temp.jpg')
 
 #summarise turbidity by month
-monthly_turb <- df2 %>%
+monthly_turb <- df4 %>%
   filter(!turbidity_p_710 < 0) %>%
   group_by(month, station_id) %>%
   summarise(mean_turb = mean(turbidity_p_710, na.rm = TRUE),
@@ -357,7 +361,7 @@ monthly_turb %>%
 ggsave('figures/monthly_turb.jpg')
 
 ## summarise water temp by month
-yearly_wat_temp <- df2 %>%
+yearly_wat_temp <- df4 %>%
   filter(wattemp_units > 0) %>%
   group_by(year, station_id) %>%
   summarise(mean_wat = mean(wattemp_units, na.rm = TRUE),
@@ -378,7 +382,7 @@ yearly_wat_temp %>%
 ggsave('figures/yearly_air_temp.jpg')
 
 #### Make data ready for multiplots
-df_long<-df2 %>% 
+df_long<-df4 %>% 
   select(collection_date,
          station_name,
          air_temp=airtemp_units,
@@ -420,35 +424,17 @@ df_plots$plots[[10]]
 map2(paste0("./figures/station_plots/", df_plots$plot_id, ".jpg"), 
        df_plots$plots, ggsave)
 
-#Same thing but for pass/fail
-df_long1<-df2 %>% 
-  select(collection_date,
-         station_id,
-         air_temp=airtemp_units,
-         conductivity=conductivity_p_709,
-         e_coli=e_coli_count,
-         entero=enterococcus_bacteria_concentration_p_1690,
-         salinity=salinity_p_1715,
-         turbidity=turbidity_p_710,
-         water_temp=wattemp_units,
-         ecoli_grade = ecoli_grade,
-         entero_grade = enterococcus_grade) %>% 
-  pivot_longer(cols=c("air_temp","conductivity","e_coli","entero","salinity",
-                      "turbidity","water_temp"),
-               values_to= "value",
-               names_to= "parameter") %>% 
-  drop_na(value)
 
 
 #make summary tables
-tab_entero <- df3[!is.na(df3$entero_grade1), ] %>%
+tab_entero <- df4[!is.na(df3$entero_grade1), ] %>%
   group_by(station_id) %>%
   summarise(ent_avg = mean(entero_grade1),
             n = length(station_id),
             sd = sd(entero_grade1),
             se = sd/sqrt(n))
 
-tab_ecoli <- df3 [!is.na(df3$ecoli_grade1), ] %>%
+tab_ecoli <- df4 [!is.na(df3$ecoli_grade1), ] %>%
   group_by(station_id) %>%
   summarise(eco_avg = mean(ecoli_grade1),
             n = length(ecoli_grade1),
@@ -472,7 +458,7 @@ ggsave('figures/overall_ecoli_safety.jpg')
 # Closer to 1 is healthier! 
 
 #### Yearly E. Coli Safety Table & Graph
-tab_ecoli_yearly <- df3 [!is.na(df3$ecoli_grade1), ] %>%
+tab_ecoli_yearly <- df4 [!is.na(df4$ecoli_grade1), ] %>%
   group_by(station_id, year) %>%
   summarise(eco_avg = mean(ecoli_grade1),
             n = length(ecoli_grade1),
@@ -484,21 +470,7 @@ df_nest<-tab_ecoli_yearly %>%
   nest()
 
 
-### AAA STRUGGLING HERE!  Need to make 
-# a separate graph for each station showing the
-# average passing rate for e coli per year
-#just use faceting? 
 
-df_eco_plots<-df_nest %>% 
-  mutate(plots=map2(data,station_id, ~ggplot(aes(x = year, y = eco_avg))+
-                      ggtitle(.y)+
-                      geom_bar(stat = 'identity')+
-                      geom_errorbar(aes(ymin= eco_avg - se,
-                                        ymax = eco_avg + se))+
-                      labs(x = "Collection Date") 
-                           ))
-
-df_eco_plots$plots[[1]]
 
 ######### Overall Enterococcus Safety Graph
 tab_entero %>% 
@@ -516,23 +488,24 @@ ggsave('figures/overall_entero_safety.jpg')
 
 df4 %>%
   filter(!is.na(hypo_safe)) %>%
-  drop_na(station_description) %>%
-  ggplot(aes( x =station_description, fill = hypo_safe)) +
+  drop_na(station_name) %>%
+  ggplot(aes( x =station_name, fill = hypo_safe)) +
   geom_bar(stat='count') +
-  labs(x = "Station Name", y = 'Days Sampled', 
+  labs(x = "Site Name", y = 'Days Sampled', 
        fill = "Hypothermia Safety",
-       title = 'Hypothermia Safe Days Across All Years') + 
+       title = 'Hypothermia Safety') + 
   scale_fill_manual(values = c('#8EC4ED', '#188F30'),
                       name = "Hypothermia Safety",
-                      labels = c('Too Cold', 'Safe')
-                      )
+                      labels = c('Too Cold', 'Safe')) +
+                      theme(plot.margin = unit(c(.5,.5,.5,1.7), 'cm'))
+                      
 ggsave('figures/hypo_grade_all.jpg')
 
 df4 %>%
   filter(!is.na(hypo_safe)) %>%
   drop_na(month) %>%
   ggplot(aes( x =month, fill = hypo_safe)) +
-  geom_bar(stat='count') +
+  geom_bar(stat='count', position = 'fill') +
   labs(x = "Station Name", y = 'Days Sampled', 
        fill = "Hypothermia Safety",
        title = 'Hypothermia Safe Days Across All Years') + 
@@ -542,7 +515,7 @@ df4 %>%
   )
 
 
-df3 %>%
+df4 %>%
   filter(!is.na(hypo_safe)) %>%
   ggplot(aes( x =station_id, fill = hypo_safe)) +
   geom_bar(stat='count') +
@@ -552,14 +525,10 @@ df3 %>%
   scale_fill_discrete(name = "Hypothermia Safety",
                       labels = c('Fail', 'Pass'))
 
-df3 <- df3 %>%
-  mutate(hypo_safe1 = 
-           case_when(hypo_safe %in% c('P') ~ (1),
-                     hypo_safe %in% c('F') ~ (0)))
 
 
 # Summarize passing percent by station
-tab_hypo <- df3[!is.na(df3$hypo_safe1), ] %>%
+tab_hypo <- df4[!is.na(df3$hypo_safe1), ] %>%
   group_by(station_id) %>%
   summarise(hypo_avg = mean(hypo_safe1),
             n = length(station_id),
@@ -577,7 +546,7 @@ tab_hypo %>%
 ggsave('figures/overall_hypo_safety.jpg')
 # closer to 1 is a passing rate, so more safe! 
 
-tab_hypo_yearly <- df3[!is.na(df3$hypo_safe1), ] %>%
+tab_hypo_yearly <- df4[!is.na(df4$hypo_safe1), ] %>%
   group_by(year) %>%
   summarise(hypo_avg = mean(hypo_safe1),
             n = length(station_id),
@@ -593,7 +562,7 @@ tab_hypo_yearly %>%
        title = 'Yearly Hypothermia Safety')
 ggsave('figures/overall_hypo_safety.jpg')
 
-tab_hypo_yearly_sitely <- df3[!is.na(df3$hypo_safe1), ] %>%
+tab_hypo_yearly_sitely <- df4[!is.na(df4$hypo_safe1), ] %>%
   group_by(station_id, year) %>%
   summarise(hypo_avg = mean(hypo_safe1),
             n = length(station_id),
@@ -603,7 +572,7 @@ tab_hypo_yearly_sitely <- df3[!is.na(df3$hypo_safe1), ] %>%
  #can we nest this table by site and mapping/ create a 
 # graph for each site with yearly hypo safety?
 
-df3 %>%
+df4 %>%
   ggplot(aes(x = collection_date, y = temp_tot, color = station_id)) +
   geom_point(size = 2) + 
   geom_hline(yintercept = 37.778, col= 'red') +
