@@ -1,4 +1,5 @@
 library(purrr)
+library(dplyr)
 library(lubridate)
 library(tidyr)
 
@@ -21,7 +22,9 @@ photo_data<-df %>%
   mutate(filename=paste0(photo_type,"_", sample_name),
          url=na_if(url,""),
          dest=paste0("batch_photo_downloads/",filename,".jpg"))%>% 
-  drop_na(url)
+  drop_na(url) %>% 
+  filter(url!="20891",
+         url!="20563") 
 
 Map(function(u, d) download.file(u, d, mode="wb"), photo_data$url, photo_data$dest)
 
