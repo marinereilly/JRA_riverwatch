@@ -176,7 +176,8 @@ df1%>%
   mutate(station_description = case_when(
            station_description == 'Rockett<92>s Landing' ~ 'Rocketts Landing',
                      TRUE ~ station_description))
-summary(df1$station_description)
+df1$station_description <- as.factor(df1$station_description)
+
 #make data long for mapping
 df_long<-df1 %>% 
   select(fake_date,
