@@ -139,8 +139,10 @@ cmc_2020<-df2020 %>%
   
 
 
-CHECK THE NA SITES!!!!!
-  ROBIOUS HAD ONE WEEK OF IDEXX INSTEAD OF COLISCAN
+Still Need to QA the Williamsburg data
+Coliscan 0s need to be modified to 34 with < qualifier
+Need to look up minimum detection limit for IDEXXXs
+Need to add meter issue somewheres - emailed liz to see
 
 
 
