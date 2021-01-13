@@ -91,15 +91,14 @@ cmc_2020<-df2020 %>%
          air_temp_c,conductivity_us,duplicate_bacteria_concentration,
          e_coli_concentration,entercoccus_concentration,salinity_ppt,
          turbidity_ntu,water_temp_c,
-         COMMENTS=site_conditions_and_comments,Problem=meter_issue) %>% 
+         COMMENTS=site_conditions_and_comments,meter_issue) %>% 
   mutate_if(is.numeric,as.character) %>%   
   pivot_longer(cols=c(4:12), 
                names_to="parameter",
                values_to="Value") %>%      #flip from wide to long
-  mutate(Source="JRA",                     #Add extra columns
-         SampleDepth=0.3,
-         Qualifier= NA_real_) %>% 
   drop_na(Value) %>%                       #get rid of rows with no data in Value
+  mutate(Source="JRA",                     #Add extra columns
+         SampleDepth=0.3) %>% 
   mutate(ParameterType=case_when(
     parameter=="COMMENTS"   ~ "Comments",
     TRUE                    ~ "WaterQuality"),
@@ -110,7 +109,7 @@ cmc_2020<-df2020 %>%
     )) %>%                                #create Parameter Type and add Duplicate values
   #Convert duplicate parameter to regular bacteria
   select(Source,Station,Date,Time,SampleDepth, SampleId, ParameterType,
-         parameter,Value,Qualifier,Problem) %>% 
+         parameter,Value,meter_issue) %>% 
   mutate(parameter=case_when(
     parameter=="duplicate_bacteria_concentration" & 
       Station %in% c("JRA.J05",
@@ -121,7 +120,7 @@ cmc_2020<-df2020 %>%
   #is with Colilert rather than Coliscan
   mutate(ParameterName=case_when(
     parameter=="air_temp_c"                    ~ "AT.2",
-    parameter=="conductivity_us"               ~ "CO.4 (us/cm)",
+    parameter=="conductivity_us"               ~ "CO.4",
     parameter=="turbidity_ntu"                 ~ "WC.6",
     parameter=="water_temp_c"                  ~ "WT.2",
     parameter=="COMMENTS"                      ~ "COMMENTS",
@@ -135,14 +134,63 @@ cmc_2020<-df2020 %>%
                      "JRA.J30","JRA.J29","JRA.J25",
                      "JRA.J26")                ~ "ECOLI.1",
     TRUE                                       ~ "ECOLI.4"
+  ),
+  Description=case_when(
+    parameter=="air_temp_c"                    ~ "Air Temp (deg C)",
+    parameter=="conductivity_us"               ~ "Conductivity (uS/cm)",
+    parameter=="turbidity_ntu"                 ~ "Turbidity (NTU)",
+    parameter=="water_temp_c"                  ~ "Water Temp (deg C)",
+    parameter=="COMMENTS"                      ~ "Comments (open text)",
+    parameter=="salinity_ppt"                  ~ "Salinity (ppt)",
+    parameter=="entercoccus_concentration"     ~ "Enterolert (CFU/100mL)",
+    ParameterName=="ECOLI.4"                   ~ "Colilert (CFU/100mL)",
+    ParameterName=="ECOLI.1"                   ~ "Coliscan CFU/100mL)"
   )) %>% 
+  mutate(Problem=case_when(
+    meter_issue == "Y" &
+       ParameterName =="WC.6"                  ~ "F"),
+    Qualifier=case_when(
+      ParameterName=="ENT.1" &
+        Value=="0"                             ~ "<",
+      ParameterName=="ECOLI.1" &
+        Value=="0"                             ~ "<"
+    ),
+    Description=case_when(
+      parameter=="air_temp_c"                    ~ "Air Temp (deg C)",
+      parameter=="conductivity_us"               ~ "Conductivity (uS/cm)",
+      parameter=="turbidity_ntu"                 ~ "Turbidity (NTU)",
+      parameter=="water_temp_c"                  ~ "Water Temp (deg C)",
+      parameter=="COMMENTS"                      ~ "Comments (open text)",
+      parameter=="salinity_ppt"                  ~ "Salinity (ppt)",
+      parameter=="entercoccus_concentration"     ~ "Enterolert (CFU/100mL)",
+      ParameterName=="ECOLI.4"                   ~ "Colilert (CFU/100mL)",
+      ParameterName=="ECOLI.1"                   ~ "Coliscan CFU/100mL)")
+  ) %>% 
+  mutate(Value=case_when(
+    ParameterName=="ENT.1" &
+      Value=="0"                             ~ "1",
+    ParameterName=="ECOLI.1" &
+      Value=="0"                             ~ "34",
+    TRUE                                     ~ Value
+  )) %>% 
+  select(Source,Station,Date,Time,SampleDepth,SampleId,ParameterType,
+         ParameterName,Value,Qualifier,Problem,Description) %>% 
+  mutate(Date=format(Date,"%m/%d/%Y"))
   
+write.csv(cmc_2020, "JRA2020_CMCupload.csv")
+
+a<-cmc_2020 %>% 
+  filter(ParameterName == "ECOLI.1") %>% 
+  mutate(Value=as.numeric(Value))
+b<-cmc_2020 %>% 
+  filter(ParameterName == "ECOLI.4") %>% 
+  mutate(Value=as.numeric(Value))
+c<-cmc_2020 %>% 
+  filter(ParameterName == "ENT.1") %>% 
+  mutate(Value=as.numeric(Value))
 
 
-Still Need to QA the Williamsburg data
-Coliscan 0s need to be modified to 34 with < qualifier
-Need to look up minimum detection limit for IDEXXXs
-Need to add meter issue somewheres - emailed liz to see
+
 
 
 
